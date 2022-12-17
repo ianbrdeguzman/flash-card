@@ -2,6 +2,7 @@ import Head from 'next/head';
 import type { AppProps } from 'next/app';
 import { Nunito } from '@next/font/google';
 import '../styles/globals.css';
+import Link from 'next/link';
 
 const nunito = Nunito({ subsets: ['latin'] });
 
@@ -17,6 +18,16 @@ export default function App({ Component, pageProps }: AppProps) {
         ></link>
       </Head>
       <main className={nunito.className}>
+        <nav>
+          <ul>
+            <li>
+              <Link href="/">Home</Link>
+            </li>
+            <li>
+              <Link href="/create">Create</Link>
+            </li>
+          </ul>
+        </nav>
         <Component {...pageProps} />
       </main>
     </>
