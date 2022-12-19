@@ -1,10 +1,12 @@
-import { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { db } from '../firebase/admin';
+import { Deck, deckSchema } from '../schema/deck';
 
-export default function HomePage({
-  decks
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+interface Props {
+  decks: Deck[];
+}
+
+export default function HomePage({ decks }: Props) {
   return (
     <div>
       <h1>Home Page</h1>
@@ -23,18 +25,12 @@ export default function HomePage({
   );
 }
 
-interface Deck {
-  id: string;
-  title: string;
-  description: string;
-}
+export async function getServerSideProps() {
+  const document = await db.collection('decks').orderBy('createdAt').get();
 
-export async function getServerSideProps<Deck>() {
-  const decksFromFirebase = await db.collection('decks').get();
-
-  const decks = decksFromFirebase.docs.map((deck) => deck.data());
+  const decks = document.docs.map((deck) => deckSchema.parse(deck.data()));
 
   return {
-    props: { decks }
+    props: { decks: JSON.parse(JSON.stringify(decks)) }
   };
 }
