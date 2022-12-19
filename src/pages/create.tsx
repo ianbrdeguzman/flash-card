@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useRouter } from 'next/router';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase/firebase';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { firestore } from '../firebase/firebase';
 import { collections } from '../firebase/collections';
+import { useFirestoreDocumentMutation } from '@react-query-firebase/firestore';
 
 interface Inputs {
   title: string;
@@ -10,11 +10,17 @@ interface Inputs {
 }
 
 export default function CreatePage() {
-  const router = useRouter();
   const [inputs, setInputs] = useState<Inputs>({
     title: '',
     description: ''
   });
+
+  const collectionRef = collection(firestore, collections.decks);
+  const newDeckId = doc(collectionRef).id;
+  const documentRef = doc(collectionRef, newDeckId);
+
+  const { mutate, isLoading, isSuccess } =
+    useFirestoreDocumentMutation(documentRef);
 
   const handleOnChange = (e: React.FormEvent<HTMLInputElement>) => {
     setInputs({
@@ -25,17 +31,22 @@ export default function CreatePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newDeckId = doc(collection(db, collections.decks)).id;
 
-    await setDoc(doc(db, collections.decks, newDeckId), {
-      id: newDeckId,
-      title: inputs.title,
-      description: inputs.description,
-      createdAt: serverTimestamp()
-    });
-
-    router.push('/');
+    mutate(
+      {
+        id: newDeckId,
+        title: inputs.title,
+        description: inputs.description,
+        createdAt: serverTimestamp()
+      },
+      {
+        onSuccess() {
+          setInputs({ title: '', description: '' });
+        }
+      }
+    );
   };
+
   return (
     <div>
       <h1>Create Page</h1>
@@ -62,7 +73,12 @@ export default function CreatePage() {
           />
         </label>
         <br />
-        <button type="submit">Create Deck</button>
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <button type="submit">Create Deck</button>
+        )}
+        {!isLoading && isSuccess && <p>Success</p>}
       </form>
     </div>
   );
