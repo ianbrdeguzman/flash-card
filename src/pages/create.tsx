@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase/firebase';
+import { collections } from '../firebase/collections';
 
 interface Inputs {
   title: string;
@@ -7,6 +10,7 @@ interface Inputs {
 }
 
 export default function CreatePage() {
+  const router = useRouter();
   const [inputs, setInputs] = useState<Inputs>({
     title: '',
     description: ''
@@ -19,9 +23,18 @@ export default function CreatePage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(JSON.stringify(inputs, null, 2));
+    const newDeckId = doc(collection(db, collections.decks)).id;
+
+    await setDoc(doc(db, collections.decks, newDeckId), {
+      id: newDeckId,
+      title: inputs.title,
+      description: inputs.description,
+      createdAt: serverTimestamp()
+    });
+
+    router.push('/');
   };
   return (
     <div>

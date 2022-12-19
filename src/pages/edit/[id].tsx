@@ -1,6 +1,7 @@
-import { GetServerSidePropsContext } from 'next';
 import Link from 'next/link';
+import { GetServerSidePropsContext } from 'next';
 import { db } from '../../firebase/admin';
+import { collections } from '../../firebase/collections';
 import { Deck, deckSchema } from '../../schema/deck';
 
 interface Props {
@@ -29,7 +30,7 @@ export async function getServerSideProps(
     };
   }
 
-  const document = await db.collection('decks').doc(id).get();
+  const document = await db.collection(collections.decks).doc(id).get();
 
   const deck = deckSchema.parse(document.data());
 
