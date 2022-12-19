@@ -2,12 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDn1atC5sws715d1BiyvEZ0B16Oy3G553Y',
-  authDomain: 'flash-card-ba896.firebaseapp.com',
-  projectId: 'flash-card-ba896',
-  storageBucket: 'flash-card-ba896.appspot.com',
-  messagingSenderId: '205349352593',
-  appId: '1:205349352593:web:d92d12e6cb4fd048383b30'
+  apiKey: process.env.NEXT_PUBLIC_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_ADD_ID
 };
 
 const app = initializeApp(firebaseConfig);
