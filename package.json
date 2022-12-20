@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@next/font": "^13.0.6",
+    "@react-query-firebase/auth": "^1.0.0-dev.2",
     "@react-query-firebase/firestore": "^1.0.0-dev.7",
     "@types/node": "18.11.13",
     "@types/react": "18.0.26",
