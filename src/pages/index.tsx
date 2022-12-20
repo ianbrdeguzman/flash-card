@@ -1,13 +1,25 @@
 import Link from 'next/link';
-import { db } from '../firebase/admin';
+import { GetServerSidePropsContext } from 'next';
+import { authAdmin, firestoreAdmin } from '../firebase/firebaseAdmin';
 import { collections } from '../firebase/collections';
 import { Deck, deckSchema } from '../schema/deck';
+import { useAuthSignOut, useAuthUser } from '@react-query-firebase/auth';
+import { authClient } from '../firebase/firebaseClient';
 
 interface Props {
   decks: Deck[];
 }
 
 export default function HomePage({ decks }: Props) {
+  const user = useAuthUser(['user'], authClient);
+  const { mutate: signOut } = useAuthSignOut(authClient);
+
+  const handleSignOut = () => {
+    signOut();
+    document.cookie = `flash-card=;expires=Thu, 01 Jan 1970 00:00:01 GMT"`;
+    window.location.reload();
+  };
+
   return (
     <div>
       <h1>Home</h1>
@@ -27,19 +39,45 @@ export default function HomePage({ decks }: Props) {
         </ul>
       )}
       <Link href={`/create`}>Create</Link>
+      <br />
+      <button onClick={handleSignOut}>Sign Out</button>
     </div>
   );
 }
 
-export async function getServerSideProps() {
-  const document = await db
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const token = context.req.cookies['flash-card'];
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/signin',
+        permanent: false
+      }
+    };
+  }
+
+  const isSignedIn = await authAdmin.verifyIdToken(token);
+
+  if (!isSignedIn) {
+    return {
+      redirect: {
+        destination: '/signin',
+        permanent: false
+      }
+    };
+  }
+
+  const decksDocument = await firestoreAdmin
     .collection(collections.decks)
     .orderBy('createdAt')
     .get();
 
-  const parsed = document.docs.map((deck) => deckSchema.parse(deck.data()));
+  const parsedDecks = decksDocument.docs.map((deck) =>
+    deckSchema.parse(deck.data())
+  );
 
-  const decks = parsed.map((deck) => ({
+  const decks = parsedDecks.map((deck) => ({
     ...deck,
     createdAt: deck.createdAt.toDate().toISOString()
   }));

@@ -1,21 +1,26 @@
 import Link from 'next/link';
 import { useState, ChangeEvent } from 'react';
 import { GetServerSidePropsContext } from 'next';
-import { db } from '../../firebase/admin';
+import { firestoreAdmin } from '../../firebase/firebaseAdmin';
 import { collections } from '../../firebase/collections';
 import { Deck, deckSchema } from '../../schema/deck';
 import { collection, doc } from 'firebase/firestore';
-import { firestore } from '../../firebase/firebase';
-import { useFirestoreDocumentMutation } from '@react-query-firebase/firestore';
+import { firestoreClient } from '../../firebase/firebaseClient';
+import {
+  useFirestoreDocumentDeletion,
+  useFirestoreDocumentMutation
+} from '@react-query-firebase/firestore';
 import { validateInputs } from '../../lib/validateInputs';
 import type { Inputs } from '../create';
+import { useRouter } from 'next/router';
 
 interface Props {
   deck: Deck;
 }
 
 export default function EditPage({ deck }: Props) {
-  const deckRef = doc(collection(firestore, collections.decks), deck.id);
+  const { push } = useRouter();
+  const deckRef = doc(collection(firestoreClient, collections.decks), deck.id);
   const [edited, setEdited] = useState(false);
   const [inputs, setInputs] = useState<Inputs>({
     title: deck.title,
@@ -26,6 +31,15 @@ export default function EditPage({ deck }: Props) {
     deckRef,
     { merge: true }
   );
+
+  const { mutate: deleteDeck, isSuccess: isDeleteSuccess } =
+    useFirestoreDocumentDeletion(deckRef, {
+      onSettled() {
+        setTimeout(() => {
+          push('/');
+        }, 1000);
+      }
+    });
 
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputs({
@@ -59,11 +73,17 @@ export default function EditPage({ deck }: Props) {
       <p>{deck.id}</p>
       <form onSubmit={handleOnSubmit}>
         <label htmlFor="title">
-          <input name="title" value={inputs.title} onChange={handleOnChange} />
+          <input
+            id="title"
+            name="title"
+            value={inputs.title}
+            onChange={handleOnChange}
+          />
         </label>
         <br />
         <label htmlFor="description">
           <input
+            id="description"
             name="description"
             value={inputs.description}
             onChange={handleOnChange}
@@ -78,7 +98,12 @@ export default function EditPage({ deck }: Props) {
           </button>
         )}
       </form>
+      <button onClick={() => deleteDeck()} type="button">
+        Delete Deck
+      </button>
+      <br />
       {isSuccess && <p>Successfully saved.</p>}
+      {isDeleteSuccess && <p>Successfully deleted.</p>}
       <Link href="/">Back</Link>
     </div>
   );
@@ -86,22 +111,26 @@ export default function EditPage({ deck }: Props) {
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>
 ) {
-  const id = context.params?.id;
+  const deckId = context.params?.id;
+  const deckRef = firestoreAdmin
+    .collection(collections.decks)
+    .doc(deckId ?? '');
 
-  if (!id) {
+  if (!deckId || !deckRef) {
     return {
       notFound: true
     };
   }
 
-  const document = await db.collection(collections.decks).doc(id).get();
+  const deckDocument = await deckRef.get();
 
-  const parsed = deckSchema.parse(document.data());
+  const parsedDeck = deckSchema.parse(deckDocument.data());
 
   const deck = {
-    ...parsed,
-    createdAt: parsed.createdAt.toDate().toISOString()
+    ...parsedDeck,
+    createdAt: parsedDeck.createdAt.toDate().toISOString()
   };
+
   return {
     props: { deck }
   };
