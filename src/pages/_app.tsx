@@ -1,8 +1,7 @@
-import Head from 'next/head';
 import type { AppProps } from 'next/app';
 import { Nunito } from '@next/font/google';
-import { Navigation } from '../components/Navigation';
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { CustomHead } from '../components/Head';
 import '../styles/globals.css';
 
 const nunito = Nunito({ subsets: ['latin'] });
@@ -11,17 +10,9 @@ const queryClient = new QueryClient();
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
-      <Head>
-        <title>Flash Card</title>
-        <meta name="description" content="Flash Card App" />
-        <link
-          rel="icon"
-          href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>"
-        ></link>
-      </Head>
+      <CustomHead />
       <QueryClientProvider client={queryClient}>
         <main className={nunito.className}>
-          <Navigation />
           <Component {...pageProps} />
         </main>
       </QueryClientProvider>

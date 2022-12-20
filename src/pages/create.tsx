@@ -1,10 +1,12 @@
+import Link from 'next/link';
 import React, { useState } from 'react';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '../firebase/firebase';
 import { collections } from '../firebase/collections';
 import { useFirestoreDocumentMutation } from '@react-query-firebase/firestore';
+import { validateInputs } from '../lib/validateInputs';
 
-interface Inputs {
+export interface Inputs {
   title: string;
   description: string;
 }
@@ -32,24 +34,26 @@ export default function CreatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    mutate(
-      {
-        id: newDeckId,
-        title: inputs.title,
-        description: inputs.description,
-        createdAt: serverTimestamp()
-      },
-      {
-        onSuccess() {
-          setInputs({ title: '', description: '' });
+    if (validateInputs<Inputs>(inputs)) {
+      mutate(
+        {
+          id: newDeckId,
+          title: inputs.title.trim(),
+          description: inputs.description.trim(),
+          createdAt: serverTimestamp()
+        },
+        {
+          onSuccess() {
+            setInputs({ title: '', description: '' });
+          }
         }
-      }
-    );
+      );
+    }
   };
 
   return (
     <div>
-      <h1>Create Page</h1>
+      <h1>Create Deck</h1>
       <form onSubmit={handleSubmit}>
         <label htmlFor="title">
           <input
@@ -57,7 +61,7 @@ export default function CreatePage() {
             name="title"
             value={inputs.title}
             required
-            placeholder="Deck Title"
+            placeholder="Title"
             onChange={handleOnChange}
           />
         </label>
@@ -68,7 +72,7 @@ export default function CreatePage() {
             name="description"
             required
             value={inputs.description}
-            placeholder="Deck Description"
+            placeholder="Description"
             onChange={handleOnChange}
           />
         </label>
@@ -80,6 +84,7 @@ export default function CreatePage() {
         )}
         {!isLoading && isSuccess && <p>Success</p>}
       </form>
+      <Link href={`/`}>Back</Link>
     </div>
   );
 }
