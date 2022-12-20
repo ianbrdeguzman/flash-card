@@ -5,6 +5,7 @@ import { firestoreClient } from '../firebase/firebaseClient';
 import { collections } from '../firebase/collections';
 import { useFirestoreDocumentMutation } from '@react-query-firebase/firestore';
 import { validateInputs } from '../lib/validateInputs';
+import { withAuth } from '../lib/withAuth';
 
 export interface Inputs {
   title: string;
@@ -90,3 +91,9 @@ export default function CreatePage() {
     </div>
   );
 }
+
+export const getServerSideProps = withAuth(async () => {
+  return {
+    props: {}
+  };
+});

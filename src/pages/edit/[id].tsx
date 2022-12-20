@@ -13,6 +13,7 @@ import {
 import { validateInputs } from '../../lib/validateInputs';
 import type { Inputs } from '../create';
 import { useRouter } from 'next/router';
+import { withAuth } from '../../lib/withAuth';
 
 interface Props {
   deck: Deck;
@@ -108,30 +109,28 @@ export default function EditPage({ deck }: Props) {
     </div>
   );
 }
-export async function getServerSideProps(
-  context: GetServerSidePropsContext<{ id: string }>
-) {
-  const deckId = context.params?.id;
-  const deckRef = firestoreAdmin
-    .collection(collections.decks)
-    .doc(deckId ?? '');
 
-  if (!deckId || !deckRef) {
+export const getServerSideProps = withAuth(
+  async (context: GetServerSidePropsContext) => {
+    const deckId = context.params?.id as string;
+    const deckRef = firestoreAdmin.collection(collections.decks).doc(deckId);
+    const deckDocument = await deckRef.get();
+
+    if (!deckId || !deckRef || !deckDocument.exists) {
+      return {
+        notFound: true
+      };
+    }
+
+    const parsedDeck = deckSchema.parse(deckDocument.data());
+
+    const deck = {
+      ...parsedDeck,
+      createdAt: parsedDeck.createdAt.toDate().toISOString()
+    };
+
     return {
-      notFound: true
+      props: { deck }
     };
   }
-
-  const deckDocument = await deckRef.get();
-
-  const parsedDeck = deckSchema.parse(deckDocument.data());
-
-  const deck = {
-    ...parsedDeck,
-    createdAt: parsedDeck.createdAt.toDate().toISOString()
-  };
-
-  return {
-    props: { deck }
-  };
-}
+);
