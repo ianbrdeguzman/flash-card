@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
+import { GetServerSidePropsContext } from 'next';
+import { hasCookie } from 'cookies-next';
 import { authClient } from '../firebase/firebaseClient';
 import { useAuthCreateUserWithEmailAndPassword } from '@react-query-firebase/auth';
 
@@ -82,4 +84,19 @@ export default function Register() {
       </p>
     </div>
   );
+}
+
+export function getServerSideProps(context: GetServerSidePropsContext) {
+  if (hasCookie('auth', context)) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      }
+    };
+  }
+
+  return {
+    props: {}
+  };
 }
