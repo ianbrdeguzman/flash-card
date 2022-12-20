@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { GetServerSidePropsContext } from 'next';
+import { setCookie, hasCookie } from 'cookies-next';
 import { authClient } from '../firebase/firebaseClient';
 import { useAuthSignInWithEmailAndPassword } from '@react-query-firebase/auth';
 
@@ -36,8 +38,7 @@ export default function SignIn() {
       {
         async onSuccess({ user }) {
           const token = await user.getIdToken();
-          console.log(token);
-          document.cookie = `flash-card=${token}`;
+          setCookie('auth', token);
           push('/');
         }
       }
@@ -79,4 +80,19 @@ export default function SignIn() {
       </p>
     </div>
   );
+}
+
+export function getServerSideProps(context: GetServerSidePropsContext) {
+  if (hasCookie('auth', context)) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      }
+    };
+  }
+
+  return {
+    props: {}
+  };
 }
