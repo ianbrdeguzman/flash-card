@@ -1,28 +1,61 @@
 import Link from 'next/link';
-import { GetServerSidePropsContext } from 'next';
-import { authAdmin, firestoreAdmin } from '../firebase/firebaseAdmin';
+import { useRouter } from 'next/router';
+import { firestoreAdmin } from '../firebase/firebaseAdmin';
 import { collections } from '../firebase/collections';
+import { deleteCookie } from 'cookies-next';
 import { Deck, deckSchema } from '../schema/deck';
-import { useAuthSignOut, useAuthUser } from '@react-query-firebase/auth';
+import {
+  useAuthSignOut,
+  useAuthUser,
+  useAuthSendEmailVerification
+} from '@react-query-firebase/auth';
 import { authClient } from '../firebase/firebaseClient';
+import { withAuth } from '../lib/withAuth';
 
 interface Props {
   decks: Deck[];
 }
 
 export default function HomePage({ decks }: Props) {
-  const user = useAuthUser(['user'], authClient);
+  const { push } = useRouter();
+  const { data: user } = useAuthUser(['user'], authClient);
   const { mutate: signOut } = useAuthSignOut(authClient);
+  const { mutate: sendEmailVerification } = useAuthSendEmailVerification();
 
   const handleSignOut = () => {
     signOut();
-    document.cookie = `flash-card=;expires=Thu, 01 Jan 1970 00:00:01 GMT"`;
-    window.location.reload();
+    deleteCookie('auth');
+    push('/signin');
   };
+
+  const handleVerifyOnClick = () => {
+    if (user) {
+      sendEmailVerification(
+        {
+          user,
+          actionCodeSettings: {
+            url: 'http://localhost:3000/'
+          }
+        },
+        {
+          onSuccess() {
+            console.log('email sent...');
+          }
+        }
+      );
+    }
+  };
+
+  if (!user) {
+    return <h1>Loading...</h1>;
+  }
 
   return (
     <div>
-      <h1>Home</h1>
+      <h1>Signed in as {user?.email}</h1>
+      {!user.emailVerified && (
+        <button onClick={handleVerifyOnClick}>Verify email</button>
+      )}
       {decks.length === 0 ? (
         <p>No decks available</p>
       ) : (
@@ -45,29 +78,7 @@ export default function HomePage({ decks }: Props) {
   );
 }
 
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const token = context.req.cookies['flash-card'];
-
-  if (!token) {
-    return {
-      redirect: {
-        destination: '/signin',
-        permanent: false
-      }
-    };
-  }
-
-  const isSignedIn = await authAdmin.verifyIdToken(token);
-
-  if (!isSignedIn) {
-    return {
-      redirect: {
-        destination: '/signin',
-        permanent: false
-      }
-    };
-  }
-
+export const getServerSideProps = withAuth(async () => {
   const decksDocument = await firestoreAdmin
     .collection(collections.decks)
     .orderBy('createdAt')
@@ -85,4 +96,4 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   return {
     props: { decks }
   };
-}
+});
