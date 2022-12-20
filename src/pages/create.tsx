@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import { firestore } from '../firebase/firebase';
+import { firestoreClient } from '../firebase/firebaseClient';
 import { collections } from '../firebase/collections';
 import { useFirestoreDocumentMutation } from '@react-query-firebase/firestore';
 import { validateInputs } from '../lib/validateInputs';
@@ -17,7 +17,7 @@ export default function CreatePage() {
     description: ''
   });
 
-  const collectionRef = collection(firestore, collections.decks);
+  const collectionRef = collection(firestoreClient, collections.decks);
   const newDeckId = doc(collectionRef).id;
   const documentRef = doc(collectionRef, newDeckId);
 
@@ -58,6 +58,7 @@ export default function CreatePage() {
         <label htmlFor="title">
           <input
             type="text"
+            id="title"
             name="title"
             value={inputs.title}
             required
@@ -69,6 +70,7 @@ export default function CreatePage() {
         <label htmlFor="description">
           <input
             type="text"
+            id="description"
             name="description"
             required
             value={inputs.description}
