@@ -10,12 +10,12 @@ interface Props {
 export default function HomePage({ decks }: Props) {
   return (
     <div>
-      <h1>Home Page</h1>
-      <ul>
-        {decks.length === 0 ? (
-          <li>No decks available</li>
-        ) : (
-          decks.map(({ id, title }) => {
+      <h1>Home</h1>
+      {decks.length === 0 ? (
+        <p>No decks available</p>
+      ) : (
+        <ul>
+          {decks.map(({ id, title }) => {
             return (
               <li key={id}>
                 <Link href={`/edit/${id}`}>
@@ -23,9 +23,10 @@ export default function HomePage({ decks }: Props) {
                 </Link>
               </li>
             );
-          })
-        )}
-      </ul>
+          })}
+        </ul>
+      )}
+      <Link href={`/create`}>Create</Link>
     </div>
   );
 }
@@ -36,9 +37,14 @@ export async function getServerSideProps() {
     .orderBy('createdAt')
     .get();
 
-  const decks = document.docs.map((deck) => deckSchema.parse(deck.data()));
+  const parsed = document.docs.map((deck) => deckSchema.parse(deck.data()));
+
+  const decks = parsed.map((deck) => ({
+    ...deck,
+    createdAt: deck.createdAt.toDate().toISOString()
+  }));
 
   return {
-    props: { decks: JSON.parse(JSON.stringify(decks)) }
+    props: { decks }
   };
 }
